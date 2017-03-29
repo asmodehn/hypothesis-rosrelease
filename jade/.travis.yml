@@ -1,0 +1,45 @@
+sudo: required
+dist: trusty
+language: generic
+
+branches:
+  except:
+    - /^rpm/jade/trusty/.*$/  # not testing rpm builds in trusty
+    - /^debian/jade/trusty/.*$/ # not testing pacakge building here (ROS buildfarm will do it)
+
+  only:
+    # We can test release or upstream after patches have been applied
+    - /^release/.*$/ 
+    - upstream 
+
+# this is a third party package, we check only usual catkin builds.
+# Let the ros buildfarm check the actual deb package build.
+
+env:
+  # This will check any ROS distro supported on this OS
+  # checking devel and install separately so that they don't influence each other (dependencies, path, env, etc.)
+  - ROS_DISTRO=jade ROS_FLOW=devel
+  - ROS_DISTRO=jade ROS_FLOW=install
+
+install:
+# Add ROS repositories
+  - sudo sh -c 'echo "deb http://packages.ros.org/ros-shadow-fixed/ubuntu trusty main" > /etc/apt/sources.list.d/ros-latest.list'
+  - wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
+  - sudo apt-get update
+# Install ROS base
+  - sudo apt-get install ros-$ROS_DISTRO-ros-base -y
+# Install and initialize rosdep
+  - sudo apt-get install python-rosdep -y
+  - sudo `which rosdep` init
+  - rosdep update
+# Use rosdep to install pyros-setup's dependencies
+  - rosdep install --default-yes --from-paths ./ --rosdistro $ROS_DISTRO
+
+script:
+  # full ROS setup, build and test
+  # rospack find is TMP. debugging travis env here...
+  - source /opt/ros/$ROS_DISTRO/setup.bash && rospack profile
+  - bash travis_checks.sh
+
+notifications:
+  email: false
