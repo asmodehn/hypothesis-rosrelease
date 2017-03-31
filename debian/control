@@ -1,0 +1,12 @@
+Source: ros-indigo-hypothesis
+Section: misc
+Priority: extra
+Maintainer: AlexV <asmodehn@gmail.com>
+Build-Depends: debhelper (>= 9.0.0), python-enum34, ros-indigo-catkin (>= 0.6.18), ros-indigo-catkin-pip (>= 0.2.0), ros-indigo-flaky
+Homepage: 
+Standards-Version: 3.9.2
+
+Package: ros-indigo-hypothesis
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, python-enum34
+Description: Advanced property-based (QuickCheck-like) testing for Python
