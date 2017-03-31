@@ -1,45 +1,80 @@
-sudo: required
-dist: trusty
-language: generic
+language: c
 
-branches:
-  except:
-    - /^rpm/jade/trusty/.*$/  # not testing rpm builds in trusty
-    - /^debian/jade/trusty/.*$/ # not testing pacakge building here (ROS buildfarm will do it)
+sudo: false
 
-  only:
-    # We can test release or upstream after patches have been applied
-    - /^release/.*$/ 
-    - upstream 
+env: PYTHONDONTWRITEBYTECODE=x
 
-# this is a third party package, we check only usual catkin builds.
-# Let the ros buildfarm check the actual deb package build.
+os:
+    - osx
+    - linux
+
+cache:
+    apt: true
+    directories:
+        - $HOME/.runtimes
+        - $HOME/.venv
+        - $HOME/.cache/pip
+        - $HOME/wheelhouse
 
 env:
-  # This will check any ROS distro supported on this OS
-  # checking devel and install separately so that they don't influence each other (dependencies, path, env, etc.)
-  - ROS_DISTRO=jade ROS_FLOW=devel
-  - ROS_DISTRO=jade ROS_FLOW=install
+    global:
+        - BUILD_RUNTIMES=$HOME/.runtimes
 
-install:
-# Add ROS repositories
-  - sudo sh -c 'echo "deb http://packages.ros.org/ros-shadow-fixed/ubuntu trusty main" > /etc/apt/sources.list.d/ros-latest.list'
-  - wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
-  - sudo apt-get update
-# Install ROS base
-  - sudo apt-get install ros-$ROS_DISTRO-ros-base -y
-# Install and initialize rosdep
-  - sudo apt-get install python-rosdep -y
-  - sudo `which rosdep` init
-  - rosdep update
-# Use rosdep to install pyros-setup's dependencies
-  - rosdep install --default-yes --from-paths ./ --rosdistro $ROS_DISTRO
+    matrix:
+        - TASK=documentation
+        - TASK=lint
+        - TASK=check-format
+        - TASK=check-coverage
+        - TASK=check-unicode
+        - TASK=check-pypy
+        - TASK=check-py35
+        - TASK=check-py27
+        - TASK=check-py34
+        - TASK=check-nose
+        - TASK=check-pytest27
+        - TASK=check-pytest26
+        - TASK=check-fakefactory052
+        - TASK=check-fakefactory053
+        - TASK=check-pytest26
+        - TASK=check-django17
+        - TASK=check-django18
 
 script:
-  # full ROS setup, build and test
-  # rospack find is TMP. debugging travis env here...
-  - source /opt/ros/$ROS_DISTRO/setup.bash && rospack profile
-  - bash travis_checks.sh
+    - make $TASK
+
+matrix:
+    exclude:
+        - os: osx
+          env: TASK=check-unicode
+        - os: osx
+          env: TASK=check-fakefactory052
+        - os: osx
+          env: TASK=check-fakefactory053
+        - os: osx
+          env: TASK=check-pytest26
+        - os: osx
+          env: TASK=check-pytest27
+        - os: osx
+          env: TASK=documentation
+        - os: osx
+          env: TASK=check-django17
+        - os: osx
+          env: TASK=check-django18
+        - os: osx
+          env: TASK=check-examples2
+        - os: osx
+          env: TASK=check-examples3
+        - os: osx
+          env: TASK=check-coverage
+        - os: osx
+          env: TASK=check-format
+        - os: osx
+          env: TASK=lint
+    fast_finish: true
 
 notifications:
-  email: false
+  email:
+    recipients:
+      - david@drmaciver.com
+    on_success: never
+    on_failure: change
